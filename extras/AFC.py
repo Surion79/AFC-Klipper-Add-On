@@ -1518,9 +1518,9 @@ class AFC:
             pass
         return message
 
-    def get_status(self):
+    def get_status(self) -> dict:
         """
-        Displays current status of AFC for webhooks
+        Displays the current status of AFC for webhooks
         """
         status = {"current_load": self.current,
                   "current_lane": self.current_loading,
@@ -1546,7 +1546,7 @@ class AFC:
         status["message"] = self._get_message()
         return status
 
-    def _webhooks_status(self, web_request):
+    def _webhooks_status(self, web_request) -> None:
         """
         Webhooks callback for <ip_address>/printer/afc/status, and displays current AFC status for everything
         """
