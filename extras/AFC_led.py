@@ -6,17 +6,20 @@
 
 import logging
 from . import led
+
 BACKGROUND_PRIORITY_CLOCK = 0x7fffffff00000000
 BIT_MAX_TIME = .000004
 RESET_MIN_TIME = .000050
 MAX_MCU_SIZE = 500  # Sanity check on LED chain length
+
+
 class AFCled:
     def __init__(self, config):
-        self.printer    = printer = config.get_printer()
-        self.mutex      = printer.get_reactor().mutex()
-        self.fullname   = config.get_name()
-        self.name       = self.fullname.split()[-1]
-        self.AFC        = self.printer.lookup_object('AFC')
+        self.printer = printer = config.get_printer()
+        self.mutex = printer.get_reactor().mutex()
+        self.fullname = config.get_name()
+        self.name = self.fullname.split()[-1]
+        self.AFC = self.printer.lookup_object('AFC')
         self.AFC.led_obj[self.name] = self
         # Configure neopixel
         ppins = printer.lookup_object('pins')
@@ -78,27 +81,27 @@ class AFCled:
         diffs = [[i, 1] for i, (n, o) in enumerate(zip(new_data, old_data))
                  if n != o]
         # Batch together changes that are close to each other
-        for i in range(len(diffs)-2, -1, -1):
+        for i in range(len(diffs) - 2, -1, -1):
             pos, count = diffs[i]
-            nextpos, nextcount = diffs[i+1]
-            if pos + 5 >= nextpos and nextcount < 16:
-                diffs[i][1] = nextcount + (nextpos - pos)
-                del diffs[i+1]
+            next_pos, next_count = diffs[i + 1]
+            if pos + 5 >= next_pos and next_count < 16:
+                diffs[i][1] = next_count + (next_pos - pos)
+                del diffs[i + 1]
         # Transmit changes
         ucmd = self.neopixel_update_cmd.send
         for pos, count in diffs:
-            ucmd([self.oid, pos, new_data[pos:pos+count]],
+            ucmd([self.oid, pos, new_data[pos:pos + count]],
                  reqclock=BACKGROUND_PRIORITY_CLOCK)
         old_data[:] = new_data
         # Instruct mcu to update the LEDs
-        minclock = 0
+        min_clock = 0
         if print_time is not None:
-            minclock = self.mcu.print_time_to_clock(print_time)
+            min_clock = self.mcu.print_time_to_clock(print_time)
         scmd = self.neopixel_send_cmd.send
         if self.printer.get_start_args().get('debugoutput') is not None:
             return
         for i in range(8):
-            params = scmd([self.oid], minclock=minclock,
+            params = scmd([self.oid], minclock=min_clock,
                           reqclock=BACKGROUND_PRIORITY_CLOCK)
             if params['success']:
                 break
@@ -106,21 +109,23 @@ class AFCled:
             logging.info("Neopixel update did not succeed")
 
     def update_leds(self, led_state, print_time):
-        def reactor_bgfunc(eventtime):
+        def reactor_bgfunc():
             with self.mutex:
                 self.update_color_data(led_state)
                 self.send_data(print_time)
+
         self.printer.get_reactor().register_callback(reactor_bgfunc)
 
-    def get_status(self, eventtime=None):
-        return self.led_helper.get_status(eventtime)
+    def get_status(self, event_time=None):
+        return self.led_helper.get_status(event_time)
 
     def led_change(self, index, status, update_last=True):
         if update_last: self.last_led_color[str(index)] = status
         if self.keep_leds_off: return
 
-        colors=list(map(float,status.split(',')))
+        colors = list(map(float, status.split(',')))
         transmit = 1
+
         def lookahead_bgfunc(print_time):
             if hasattr(self.led_helper, "_set_color"):
                 set_color_fn = self.led_helper._set_color
@@ -131,18 +136,20 @@ class AFCled:
             set_color_fn(index, colors)
             if transmit:
                 check_transmit_fn(print_time)
+
         toolhead = self.printer.lookup_object('toolhead')
         toolhead.register_lookahead_callback(lookahead_bgfunc)
 
     def turn_off_leds(self):
         for i in range(self.led_helper.led_count):
-            self.led_change( i, "0,0,0,0", False)
+            self.led_change(i, "0,0,0,0", False)
         self.keep_leds_off = True
 
     def turn_on_leds(self):
         self.keep_leds_off = False
         for index, value in self.last_led_color.items():
-            self.led_change( int(index), value, False )
+            self.led_change(int(index), value, False)
+
 
 def load_config_prefix(config):
     return AFCled(config)

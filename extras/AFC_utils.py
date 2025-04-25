@@ -18,8 +18,8 @@ def add_filament_switch( switch_name, switch_pin, printer ):
     """
     import configparser
     import configfile
-    ppins = printer.lookup_object('pins')
-    ppins.allow_multi_use_pin(switch_pin.strip("!^"))
+    printer_pins = printer.lookup_object('pins')
+    printer_pins.allow_multi_use_pin(switch_pin.strip("!^"))
     filament_switch_config = configparser.RawConfigParser()
     filament_switch_config.add_section( switch_name )
     filament_switch_config.set( switch_name, 'switch_pin', switch_pin)

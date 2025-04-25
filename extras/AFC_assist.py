@@ -4,29 +4,27 @@
 #
 # This file may be distributed under the terms of the GNU GPLv3 license.
 
-import math
-
-#respooler
+# respooler
 PIN_MIN_TIME = 0.100
 RESEND_HOST_TIME = 0.300 + PIN_MIN_TIME
 MAX_SCHEDULE_TIME = 5.0
 
 
-class AFCassistMotor:
+class AFCAssistMotor:
     def __init__(self, config, type):
         self.printer = config.get_printer()
-        ppins = self.printer.lookup_object('pins')
+        printer_pins = self.printer.lookup_object('pins')
         # Determine pin type
         self.is_pwm = config.getboolean('pwm', False)
         if self.is_pwm:
-            self.mcu_pin = ppins.setup_pin('pwm', config.get('afc_motor_'+type))
+            self.mcu_pin = printer_pins.setup_pin('pwm', config.get('afc_motor_' + type))
             cycle_time = config.getfloat('cycle_time', 0.100, above=0.,
                                          maxval=MAX_SCHEDULE_TIME)
             hardware_pwm = config.getboolean('hardware_pwm', False)
             self.mcu_pin.setup_cycle_time(cycle_time, hardware_pwm)
             self.scale = config.getfloat('scale', 1., above=0.)
         else:
-            self.mcu_pin = ppins.setup_pin('digital_out', config.get('afc_motor_'+type))
+            self.mcu_pin = printer_pins.setup_pin('digital_out', config.get('afc_motor_' + type))
             self.scale = 1.
         self.last_print_time = 0.
         # Support mcu checking for maximum duration
@@ -53,7 +51,7 @@ class AFCassistMotor:
                 'shutdown_value', 0., minval=0., maxval=self.scale) / self.scale
         self.mcu_pin.setup_start_value(self.last_value, self.shutdown_value)
 
-    def get_status(self, eventtime):
+    def get_status(self):
         return {'value': self.last_value}
 
     def _set_pin(self, print_time, value, is_resend=False):
@@ -70,7 +68,7 @@ class AFCassistMotor:
             self.resend_timer = self.reactor.register_timer(
                 self._resend_current_val, self.reactor.NOW)
 
-    def _resend_current_val(self, eventtime):
+    def _resend_current_val(self):
         if self.last_value == self.shutdown_value:
             self.reactor.unregister_timer(self.resend_timer)
             self.resend_timer = None
@@ -83,7 +81,3 @@ class AFCassistMotor:
             return systime + time_diff
         self._set_pin(print_time + PIN_MIN_TIME, self.last_value, True)
         return systime + self.resend_interval
-
-
-
-    

@@ -4,12 +4,15 @@
 #
 # This file may be distributed under the terms of the GNU GPLv3 license.
 from configparser import Error as error
-try:
-    from extras.AFC_BoxTurtle import afcBoxTurtle
-except:
-    raise error("Error trying to import AFC_BoxTurtle, please rerun install-afc.sh script in your AFC-Klipper-Add-On directory then restart klipper")
 
-class afcNightOwl(afcBoxTurtle):
+try:
+    from extras.AFC_BoxTurtle import AFC_BoxTurtle
+except:
+    raise error(
+        "Error trying to import AFC_BoxTurtle, please rerun install-afc.sh script in your AFC-Klipper-Add-On directory then restart klipper")
+
+
+class AFCNightOwl(AFC_BoxTurtle):
     def __init__(self, config):
         super().__init__(config)
         self.type = config.get('type', 'Night_Owl')
@@ -23,14 +26,15 @@ class afcNightOwl(afcBoxTurtle):
         super().handle_connect()
 
         self.logo = '<span class=success--text>Night Owl Ready</span>'
-        self.logo ='<span class=success--text>R  ,     ,\n'
-        self.logo+='E  )\___/(\n'
-        self.logo+='A {(@)v(@)}\n'
-        self.logo+='D  {|~~~|}\n'
-        self.logo+='Y  {/^^^\}\n'
-        self.logo+='!   `m-m`</span>\n'
+        self.logo = '<span class=success--text>R  ,     ,\n'
+        self.logo += 'E  )\___/(\n'
+        self.logo += 'A {(@)v(@)}\n'
+        self.logo += 'D  {|~~~|}\n'
+        self.logo += 'Y  {/^^^\}\n'
+        self.logo += '!   `m-m`</span>\n'
 
         self.logo_error = '<span class=error--text>Night Owl Not Ready</span>\n'
 
+
 def load_config_prefix(config):
-    return afcNightOwl(config)
+    return AFCNightOwl(config)
