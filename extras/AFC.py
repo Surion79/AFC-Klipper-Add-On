@@ -1587,7 +1587,7 @@ class AFC:
 
     cmd_AFC_STATUS_help = "Return current status of AFC"
 
-    def cmd_AFC_STATUS(self):
+    def cmd_AFC_STATUS(self) -> None:
         """
         This function generates a status message for each unit and lane, indicating the preparation,
         loading, hub, and tool states. The status message is formatted with HTML tags for display.
